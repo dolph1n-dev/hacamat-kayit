@@ -1,1 +1,0 @@
-# hacamat-kayıt
