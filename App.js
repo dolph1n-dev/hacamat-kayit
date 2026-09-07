@@ -8,6 +8,7 @@ import { colors } from './src/theme/colors';
 
 import AddRecordScreen from './src/screens/AddRecordScreen';
 import RecordsListScreen from './src/screens/RecordsListScreen';
+import AppointmentsScreen from './src/screens/AppointmentsScreen';
 
 import { registerForPushNotificationsAsync } from './src/utils/notifications';
 
@@ -41,6 +42,7 @@ export default function App() {
             },
           })}
         >
+          <Tab.Screen name="Randevular" component={AppointmentsScreen} />
           <Tab.Screen name="Kayıt Ekle" component={AddRecordScreen} />
           <Tab.Screen name="Liste" component={RecordsListScreen} />
         </Tab.Navigator>
