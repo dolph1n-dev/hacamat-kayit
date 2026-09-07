@@ -43,65 +43,76 @@ export default function RecordDetailModal({ visible, record, onClose, onUpdate, 
                                 editable={isEditing}
                             />
 
-                            <View style={styles.row}>
-                                <View style={styles.halfCol}>
-                                    <Text style={styles.label}>Yaş</Text>
-                                    <TextInput
-                                        style={[styles.input, !isEditing && styles.disabledInput]}
-                                        value={editedRecord.yas}
-                                        onChangeText={(text) => setEditedRecord({ ...editedRecord, yas: text })}
-                                        editable={isEditing}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                                <View style={styles.halfCol}>
-                                    <Text style={styles.label}>Kupa Sayısı</Text>
-                                    <TextInput
-                                        style={[styles.input, !isEditing && styles.disabledInput]}
-                                        value={editedRecord.kupaSayisi}
-                                        onChangeText={(text) => setEditedRecord({ ...editedRecord, kupaSayisi: text })}
-                                        editable={isEditing}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                            </View>
-
-                            <Text style={styles.label}>Yapılan İşlemler</Text>
+                            <Text style={styles.label}>Telefon Numarası</Text>
                             <TextInput
-                                style={[styles.input, styles.textArea, !isEditing && styles.disabledInput]}
-                                value={editedRecord.islemler}
-                                onChangeText={(text) => setEditedRecord({ ...editedRecord, islemler: text })}
+                                style={[styles.input, !isEditing && styles.disabledInput]}
+                                value={editedRecord.telefon}
+                                onChangeText={(text) => setEditedRecord({ ...editedRecord, telefon: text })}
                                 editable={isEditing}
-                                multiline
+                                keyboardType="phone-pad"
+                                placeholder={isEditing ? "Telefon numarası girin" : "Kayıtlı numara yok"}
+                                placeholderTextColor={colors.textSecondary}
                             />
 
-                            <View style={styles.buttonContainer}>
-                                {isEditing ? (
-                                    <>
-                                        <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={() => setIsEditing(false)}>
-                                            <Text style={styles.btnText}>İptal</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={handleSave}>
-                                            <Text style={styles.btnText}>Kaydet</Text>
-                                        </TouchableOpacity>
-                                    </>
-                                ) : (
-                                    <>
-                                        <TouchableOpacity style={[styles.btn, styles.btnDanger]} onPress={handleDelete}>
-                                            <Text style={styles.btnText}>Sil</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity style={[styles.btn, styles.btnEdit]} onPress={() => setIsEditing(true)}>
-                                            <Text style={styles.btnText}>Düzenle</Text>
-                                        </TouchableOpacity>
-                                    </>
-                                )}
-                            </View>
+                                <View style={styles.row}>
+                                    <View style={styles.halfCol}>
+                                        <Text style={styles.label}>Yaş</Text>
+                                        <TextInput
+                                            style={[styles.input, !isEditing && styles.disabledInput]}
+                                            value={editedRecord.yas}
+                                            onChangeText={(text) => setEditedRecord({ ...editedRecord, yas: text })}
+                                            editable={isEditing}
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                    <View style={styles.halfCol}>
+                                        <Text style={styles.label}>Kupa Sayısı</Text>
+                                        <TextInput
+                                            style={[styles.input, !isEditing && styles.disabledInput]}
+                                            value={editedRecord.kupaSayisi}
+                                            onChangeText={(text) => setEditedRecord({ ...editedRecord, kupaSayisi: text })}
+                                            editable={isEditing}
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                </View>
 
-                            {!isEditing && (
-                                <TouchableOpacity style={styles.btnCloseTop} onPress={onClose}>
-                                    <Text style={styles.btnCloseText}>Kapat</Text>
-                                </TouchableOpacity>
-                            )}
+                                <Text style={styles.label}>Yapılan İşlemler</Text>
+                                <TextInput
+                                    style={[styles.input, styles.textArea, !isEditing && styles.disabledInput]}
+                                    value={editedRecord.islemler}
+                                    onChangeText={(text) => setEditedRecord({ ...editedRecord, islemler: text })}
+                                    editable={isEditing}
+                                    multiline
+                                />
+
+                                <View style={styles.buttonContainer}>
+                                    {isEditing ? (
+                                        <>
+                                            <TouchableOpacity style={[styles.btn, styles.btnCancel]} onPress={() => setIsEditing(false)}>
+                                                <Text style={styles.btnText}>İptal</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={handleSave}>
+                                                <Text style={styles.btnText}>Kaydet</Text>
+                                            </TouchableOpacity>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <TouchableOpacity style={[styles.btn, styles.btnDanger]} onPress={handleDelete}>
+                                                <Text style={styles.btnText}>Sil</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity style={[styles.btn, styles.btnEdit]} onPress={() => setIsEditing(true)}>
+                                                <Text style={styles.btnText}>Düzenle</Text>
+                                            </TouchableOpacity>
+                                        </>
+                                    )}
+                                </View>
+
+                                {!isEditing && (
+                                    <TouchableOpacity style={styles.btnCloseTop} onPress={onClose}>
+                                        <Text style={styles.btnCloseText}>Kapat</Text>
+                                    </TouchableOpacity>
+                                )}
                         </ScrollView>
                     </View>
                     {isEditing && <KeyboardToolbar />}

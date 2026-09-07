@@ -1,4 +1,5 @@
 import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -8,9 +9,15 @@ import { colors } from './src/theme/colors';
 import AddRecordScreen from './src/screens/AddRecordScreen';
 import RecordsListScreen from './src/screens/RecordsListScreen';
 
+import { registerForPushNotificationsAsync } from './src/utils/notifications';
+
 const Tab = createBottomTabNavigator();
 
 export default function App() {
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
