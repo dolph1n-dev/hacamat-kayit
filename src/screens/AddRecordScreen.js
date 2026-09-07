@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { getRecords, saveRecords } from '../utils/storage';
 import KeyboardToolbar from '../components/KeyboardToolbar';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function AddRecordScreen() {
   const [isim, setIsim] = useState('');
@@ -14,6 +15,8 @@ export default function AddRecordScreen() {
   const [yas, setYas] = useState('');
   const [kupaSayisi, setKupaSayisi] = useState('');
   const [islemler, setIslemler] = useState('');
+  const [tarih, setTarih] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Sadece uygulamaya kaydetme işlemi
   const kaydet = async () => {
@@ -29,7 +32,7 @@ export default function AddRecordScreen() {
       yas, 
       kupaSayisi, 
       islemler, 
-      tarih: new Date().toISOString() 
+      tarih: tarih.toISOString()
     };
     
     const mevcutKayitlar = await getRecords();
@@ -76,6 +79,28 @@ export default function AddRecordScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Yeni Müşteri</Text>
+
+          <TouchableOpacity 
+            style={styles.dateBtn} 
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+            <Text style={styles.dateBtnText}>
+              Kayıt Tarihi: {tarih.toLocaleDateString('tr-TR')}
+            </Text>
+          </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={tarih}
+              mode="date"
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShowDatePicker(Platform.OS === 'ios');
+                if (selectedDate) setTarih(selectedDate);
+              }}
+            />
+          )}
           
           <TextInput 
             style={styles.input} 
@@ -131,5 +156,7 @@ const styles = StyleSheet.create({
   half: { width: '48%' },
   textArea: { minHeight: 120, textAlignVertical: 'top' },
   button: { backgroundColor: colors.primary, padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  buttonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' }
+  buttonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  dateBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.inputBackground, padding: 16, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: colors.border },
+  dateBtnText: { color: colors.textPrimary, fontSize: 16, marginLeft: 10 },
 });
