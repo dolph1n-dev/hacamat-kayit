@@ -7,6 +7,7 @@ import RecordDetailModal from '../components/RecordDetailModal';
 import { colors } from '../theme/colors';
 import { getRecords, saveRecords } from '../utils/storage';
 import { Ionicons } from '@expo/vector-icons';
+import KeyboardToolbar from '../components/KeyboardToolbar';
 
 export default function RecordsListScreen() {
   const [records, setRecords] = useState([]);
@@ -61,6 +62,7 @@ export default function RecordsListScreen() {
       </View>
 
       <FlatList
+        keyboardShouldPersistTaps="handled"
         data={filteredRecords}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
@@ -73,6 +75,7 @@ export default function RecordsListScreen() {
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>Kayıt bulunamadı.</Text>}
       />
+      <KeyboardToolbar />
 
       <RecordDetailModal
         visible={modalVisible}

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import uuid from 'react-native-uuid';
 import { colors } from '../theme/colors';
 import { getRecords, saveRecords } from '../utils/storage';
+import KeyboardToolbar from '../components/KeyboardToolbar';
 
 export default function AddRecordScreen() {
   const [isim, setIsim] = useState('');
@@ -28,7 +29,8 @@ export default function AddRecordScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.scroll}>
+        {/* keyboardShouldPersistTaps eklendi */}
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Yeni Müşteri</Text>
           
           <TextInput style={styles.input} placeholder="Müşteri İsmi" placeholderTextColor={colors.textSecondary} value={isim} onChangeText={setIsim} />
@@ -42,6 +44,9 @@ export default function AddRecordScreen() {
             <Text style={styles.buttonText}>Kaydet</Text>
           </TouchableOpacity>
         </ScrollView>
+        
+        {/* Klavye çubuğu en alta eklendi */}
+        <KeyboardToolbar />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
