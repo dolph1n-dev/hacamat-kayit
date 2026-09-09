@@ -59,12 +59,18 @@ export default function RecordDetailModal({ visible, record, onClose, onUpdate, 
                                 <DateTimePicker
                                     value={editedRecord.tarih ? new Date(editedRecord.tarih) : new Date()}
                                     mode="date"
-                                    display="default"
-                                    onChange={(event, selectedDate) => {
-                                        setShowDatePicker(Platform.OS === 'ios');
-                                        if (selectedDate) {
-                                            setEditedRecord({ ...editedRecord, tarih: selectedDate.toISOString() });
+                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                    onValueChange={(event, selectedDate) => {
+                                        if (Platform.OS === 'android') {
+                                            setShowDatePicker(false);
                                         }
+                                        const finalDate = selectedDate || event;
+                                        if (finalDate && finalDate instanceof Date) {
+                                            setEditedRecord({ ...editedRecord, tarih: finalDate.toISOString() });
+                                        }
+                                    }}
+                                    onDismiss={() => {
+                                        setShowDatePicker(false);
                                     }}
                                 />
                             )}

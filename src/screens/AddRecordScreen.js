@@ -25,16 +25,16 @@ export default function AddRecordScreen() {
       return;
     }
 
-    const yeniKayit = { 
-      id: uuid.v4(), 
-      isim, 
-      telefon, 
-      yas, 
-      kupaSayisi, 
-      islemler, 
+    const yeniKayit = {
+      id: uuid.v4(),
+      isim,
+      telefon,
+      yas,
+      kupaSayisi,
+      islemler,
       tarih: tarih.toISOString()
     };
-    
+
     const mevcutKayitlar = await getRecords();
     await saveRecords([yeniKayit, ...mevcutKayitlar]);
 
@@ -52,7 +52,7 @@ export default function AddRecordScreen() {
 
     // Rehber erişim izni iste
     const { status } = await Contacts.requestPermissionsAsync();
-    
+
     if (status === 'granted') {
       try {
         // Native kişi ekleme formunu önceden doldurulmuş şekilde aç
@@ -63,7 +63,7 @@ export default function AddRecordScreen() {
             number: telefon,
           }],
         };
-        
+
         await Contacts.presentFormAsync(null, contact);
       } catch (error) {
         Alert.alert('Hata', 'Rehber ekranı açılamadı.');
@@ -80,8 +80,8 @@ export default function AddRecordScreen() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Yeni Müşteri</Text>
 
-          <TouchableOpacity 
-            style={styles.dateBtn} 
+          <TouchableOpacity
+            style={styles.dateBtn}
             onPress={() => setShowDatePicker(true)}
           >
             <Ionicons name="calendar-outline" size={20} color={colors.primary} />
@@ -94,30 +94,38 @@ export default function AddRecordScreen() {
             <DateTimePicker
               value={tarih}
               mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(Platform.OS === 'ios');
-                if (selectedDate) setTarih(selectedDate);
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onValueChange={(event, selectedDate) => {
+                if (Platform.OS === 'android') {
+                  setShowDatePicker(false);
+                }
+                const finalDate = selectedDate || event;
+                if (finalDate && finalDate instanceof Date) {
+                  setTarih(finalDate);
+                }
+              }}
+              onDismiss={() => {
+                setShowDatePicker(false);
               }}
             />
           )}
-          
-          <TextInput 
-            style={styles.input} 
-            placeholder="Müşteri İsmi" 
-            placeholderTextColor={colors.textSecondary} 
-            value={isim} 
-            onChangeText={setIsim} 
+
+          <TextInput
+            style={styles.input}
+            placeholder="Müşteri İsmi"
+            placeholderTextColor={colors.textSecondary}
+            value={isim}
+            onChangeText={setIsim}
           />
-          
+
           <View style={styles.phoneContainer}>
-            <TextInput 
-              style={[styles.input, styles.phoneInput]} 
-              placeholder="Telefon Numarası" 
-              placeholderTextColor={colors.textSecondary} 
-              value={telefon} 
-              onChangeText={setTelefon} 
-              keyboardType="phone-pad" 
+            <TextInput
+              style={[styles.input, styles.phoneInput]}
+              placeholder="Telefon Numarası"
+              placeholderTextColor={colors.textSecondary}
+              value={telefon}
+              onChangeText={setTelefon}
+              keyboardType="phone-pad"
             />
             <TouchableOpacity style={styles.contactBtn} onPress={rehbereEkle}>
               <Ionicons name="person-add" size={20} color="#FFF" />
@@ -129,14 +137,14 @@ export default function AddRecordScreen() {
             <TextInput style={[styles.input, styles.half]} placeholder="Yaş" placeholderTextColor={colors.textSecondary} value={yas} onChangeText={setYas} keyboardType="numeric" />
             <TextInput style={[styles.input, styles.half]} placeholder="Kupa Sayısı" placeholderTextColor={colors.textSecondary} value={kupaSayisi} onChangeText={setKupaSayisi} keyboardType="numeric" />
           </View>
-          
+
           <TextInput style={[styles.input, styles.textArea]} placeholder="Yapılan İşlemler (Örn: Sırt, omuz)" placeholderTextColor={colors.textSecondary} value={islemler} onChangeText={setIslemler} multiline />
-          
+
           <TouchableOpacity style={styles.button} onPress={kaydet}>
             <Text style={styles.buttonText}>Uygulamaya Kaydet</Text>
           </TouchableOpacity>
         </ScrollView>
-        
+
         <KeyboardToolbar />
       </KeyboardAvoidingView>
     </SafeAreaView>

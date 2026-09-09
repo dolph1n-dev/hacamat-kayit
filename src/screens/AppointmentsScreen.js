@@ -156,10 +156,21 @@ export default function AppointmentsScreen() {
                                 value={time}
                                 mode="time"
                                 is24Hour={true}
-                                display="default"
-                                onChange={(event, selectedTime) => {
-                                    setShowTimePicker(Platform.OS === 'ios');
-                                    if (selectedTime) setTime(selectedTime);
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                onValueChange={(event, selectedTime) => {
+                                    // Seçim yapıldığında (Android'de "Tamam"a basıldığında veya iOS'ta tekerlek çevrildiğinde)
+                                    if (Platform.OS === 'android') {
+                                        setShowTimePicker(false);
+                                    }
+                                    // Yeni pakette değer event'in kendisi veya ikinci parametre olarak gelebiliyor, ikisini de kontrol ediyoruz
+                                    const finalTime = selectedTime || event;
+                                    if (finalTime && finalTime instanceof Date) {
+                                        setTime(finalTime);
+                                    }
+                                }}
+                                onDismiss={() => {
+                                    // Kullanıcı seçiciyi boşluğa tıklayarak veya "İptal" diyerek kapatırsa
+                                    setShowTimePicker(false);
                                 }}
                             />
                         )}
