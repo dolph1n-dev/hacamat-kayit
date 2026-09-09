@@ -37,6 +37,7 @@ export default function App() {
               let iconName;
               if (route.name === 'Kayıt Ekle') iconName = focused ? 'add-circle' : 'add-circle-outline';
               else if (route.name === 'Liste') iconName = focused ? 'list' : 'list-outline';
+              else if (route.name === 'Randevular') iconName = focused ? 'calendar' : 'calendar-outline';
               return <Ionicons name={iconName} size={size + 4} color={color} />;
             },
           })}
