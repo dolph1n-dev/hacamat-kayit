@@ -7,7 +7,7 @@ import uuid from 'react-native-uuid';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { getAppointments, saveAppointments, getRecords, saveRecords } from '../utils/storage';
-import { scheduleAppointmentNotifications } from '../utils/notifications';
+// import { scheduleAppointmentNotifications } from '../utils/notifications';
 import KeyboardToolbar from '../components/KeyboardToolbar';
 import AppointmentDetailModal from '../components/AppointmentDetailModal';
 
@@ -66,8 +66,8 @@ export default function AppointmentsScreen() {
         await saveAppointments(yeniRandevular);
         setAppointments(yeniRandevular);
 
-        // 3. Bildirimleri Kurma
-        await scheduleAppointmentNotifications(isim, tamTarih.toISOString());
+        // 3. Bildirimleri Kurma (build)
+        // await scheduleAppointmentNotifications(isim, tamTarih.toISOString());
 
         setIsAddModalVisible(false);
         setIsim(''); setTelefon(''); setSure('1 Saat');

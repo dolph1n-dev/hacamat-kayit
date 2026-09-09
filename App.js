@@ -9,13 +9,13 @@ import AddRecordScreen from './src/screens/AddRecordScreen';
 import RecordsListScreen from './src/screens/RecordsListScreen';
 import AppointmentsScreen from './src/screens/AppointmentsScreen';
 
-import { registerForPushNotificationsAsync } from './src/utils/notifications';
+// import { registerForLocalNotificationsAsync } from './src/utils/notifications'; (build)
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
   useEffect(() => {
-    registerForPushNotificationsAsync();
+   // registerForLocalNotificationsAsync(); (build)
   }, []);
 
   return (
