@@ -1,0 +1,30 @@
+name: Mobile checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TZ: Europe/Istanbul
+      CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Regression tests
+        run: node --experimental-vm-modules --test tests/regression.cjs
+      - run: npm ci
+      - name: Expo dependency compatibility
+        run: npx expo install --check
+      - name: Android JS bundle
+        run: npx expo export --platform android --output-dir dist/android
+      - name: iOS JS bundle
+        run: npx expo export --platform ios --output-dir dist/ios

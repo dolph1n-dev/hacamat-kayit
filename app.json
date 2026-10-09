@@ -6,9 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "ios": {
-      "supportsTablet": true
-    },
+    "ios": { "supportsTablet": true },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -18,16 +16,12 @@
       },
       "package": "com.yunus.hacamatkayit"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+    "web": { "favicon": "./assets/favicon.png" },
     "plugins": [
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      ["expo-contacts", { "contactsPermission": "Müşteriyi rehbere eklemek için kişilerinize erişim izni gerekir." }],
+      ["expo-notifications", { "defaultChannel": "default" }]
     ],
-    "extra": {
-      "eas": {
-        "projectId": "1491f509-325c-4d72-bd70-2d2cc970333e"
-      }
-    }
+    "extra": { "eas": { "projectId": "1491f509-325c-4d72-bd70-2d2cc970333e" } }
   }
 }
