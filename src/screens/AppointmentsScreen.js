@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Platform, Alert, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -11,6 +11,7 @@ import { localDateKey, appointmentDate, durationMinutes, normalizePhone, hasConf
 import { scheduleAppointmentNotifications, cancelAppointmentNotifications } from '../utils/notifications';
 import KeyboardToolbar from '../components/KeyboardToolbar';
 import AppointmentDetailModal from '../components/AppointmentDetailModal';
+import CustomerSourceButtons from '../components/CustomerSourceButtons';
 
 LocaleConfig.locales.tr = {
   monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
@@ -115,8 +116,11 @@ export default function AppointmentsScreen() {
         )} ListEmptyComponent={<Text style={styles.emptyText}>Bu tarihe ait randevu bulunmuyor.</Text>} />
       <AppointmentDetailModal visible={isDetailModalVisible} appointment={selectedAppointment} onClose={() => { setIsDetailModalVisible(false); loadAppointments(); }} onDelete={handleDeleteAppointment} />
       <Modal visible={isAddModalVisible} animationType="slide" transparent onRequestClose={() => { if (!saving) { setIsAddModalVisible(false); setShowTimePicker(false); } }}>
-        <View style={styles.modalOverlay}><View style={styles.modalContent}>
+        <SafeAreaView style={styles.modalSafe} edges={['top', 'bottom', 'left', 'right']}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+        <View style={styles.modalContent}><ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
           <Text style={styles.modalTitle}>Yeni Randevu</Text>
+          {isAddModalVisible && <CustomerSourceButtons includeSaved disabled={saving} onSelect={person => { setIsim(person.isim); setTelefon(person.telefon); }} />}
           <TextInput style={styles.input} placeholder="Müşteri İsmi" placeholderTextColor={colors.textSecondary} value={isim} onChangeText={setIsim} />
           <TextInput style={styles.input} placeholder="Telefon" keyboardType="phone-pad" placeholderTextColor={colors.textSecondary} value={telefon} onChangeText={setTelefon} />
           <TextInput style={styles.input} placeholder="Süre (Örn: 1 Saat)" placeholderTextColor={colors.textSecondary} value={sure} onChangeText={setSure} />
@@ -127,7 +131,8 @@ export default function AppointmentsScreen() {
             <TouchableOpacity disabled={saving} style={[styles.btn, styles.cancelBtn]} onPress={() => { setIsAddModalVisible(false); setShowTimePicker(false); }}><Text style={styles.btnText}>İptal</Text></TouchableOpacity>
             <TouchableOpacity disabled={saving} style={[styles.btn, styles.saveBtn]} onPress={handleSaveAppointment}><Text style={styles.btnText}>{saving ? 'Kaydediliyor…' : 'Kaydet'}</Text></TouchableOpacity>
           </View>
-        </View><KeyboardToolbar /></View>
+        </ScrollView><KeyboardToolbar /></View>
+        </KeyboardAvoidingView></SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
@@ -145,8 +150,9 @@ const styles = StyleSheet.create({
   cardPhone: { color: colors.textSecondary, fontSize: 14, marginTop: 4 },
   cardDuration: { color: colors.textSecondary, fontSize: 14 },
   emptyText: { color: colors.textSecondary, textAlign: 'center', marginTop: 20 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 },
-  modalContent: { backgroundColor: colors.surface, padding: 24, borderRadius: 16 },
+  modalSafe: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' },
+  modalOverlay: { flex: 1, justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: colors.surface, padding: 24, borderRadius: 16, maxHeight: '100%', flexShrink: 1 },
   modalTitle: { fontSize: 22, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 20, textAlign: 'center' },
   input: { backgroundColor: colors.inputBackground, color: colors.textPrimary, padding: 14, borderRadius: 8, marginBottom: 16, borderWidth: 1, borderColor: colors.border },
   timeBtn: { backgroundColor: colors.inputBackground, padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: colors.border },
