@@ -20,7 +20,7 @@ jobs:
           node-version: '24'
           cache: npm
       - name: Regression tests
-        run: node --experimental-vm-modules --test tests/regression.cjs
+        run: node --experimental-vm-modules --test tests/*.cjs
       - run: npm ci
       - name: Expo dependency compatibility
         run: npx expo install --check
