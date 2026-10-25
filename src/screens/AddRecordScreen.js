@@ -9,6 +9,7 @@ import { mutateAppointmentState } from '../utils/appointmentStorage';
 import { validateRecord } from '../utils/appointmentRules';
 import KeyboardToolbar from '../components/KeyboardToolbar';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import CustomerSourceButtons from '../components/CustomerSourceButtons';
 
 export default function AddRecordScreen() {
   const [isim, setIsim] = useState('');
@@ -56,6 +57,7 @@ export default function AddRecordScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Yeni Müşteri</Text>
+          <CustomerSourceButtons disabled={saving} onSelect={person => { setIsim(person.isim); setTelefon(person.telefon); }} />
           <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
             <Ionicons name="calendar-outline" size={20} color={colors.primary} />
             <Text style={styles.dateBtnText}>Kayıt Tarihi: {tarih.toLocaleDateString('tr-TR')}</Text>
