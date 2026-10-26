@@ -9,7 +9,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       TZ: Europe/Istanbul
       CI: '1'
@@ -19,12 +19,18 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - name: Release config and icon paths
+        run: node scripts/check-release.cjs
       - name: Regression tests
         run: node --experimental-vm-modules --test tests/*.cjs
       - run: npm ci
+      - name: Expo config plugins
+        run: npx expo config --type public --json > /tmp/expo-config.json
       - name: Expo dependency compatibility
         run: npx expo install --check
       - name: Android JS bundle
         run: npx expo export --platform android --output-dir dist/android
       - name: iOS JS bundle
         run: npx expo export --platform ios --output-dir dist/ios
+      - name: Android native configuration and icon generation
+        run: npx expo prebuild --platform android --no-install
