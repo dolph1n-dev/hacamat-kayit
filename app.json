@@ -4,7 +4,7 @@
     "slug": "hacamat-kayit",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.jpeg",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true
@@ -12,14 +12,14 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/android-icon-logo.jpeg",
+        "backgroundImage": "./assets/android-icon-logo.jpeg",
+        "monochromeImage": "./assets/android-icon-logo.jpeg"
       },
       "package": "com.yunus.hacamatkayit"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logo.jpeg"
     },
     "plugins": [
       [
