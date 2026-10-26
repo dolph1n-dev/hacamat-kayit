@@ -2,7 +2,7 @@
   "expo": {
     "name": "hacamat-kayit",
     "slug": "hacamat-kayit",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/logo.jpeg",
     "userInterfaceStyle": "dark",
@@ -12,9 +12,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-logo.jpeg",
-        "backgroundImage": "./assets/android-icon-logo.jpeg",
-        "monochromeImage": "./assets/android-icon-logo.jpeg"
+        "foregroundImage": "./assets/logo.jpeg"
       },
       "package": "com.yunus.hacamatkayit"
     },
@@ -25,7 +23,7 @@
       [
         "expo-contacts",
         {
-          "contactsPermission": "Müşteriyi rehbere eklemek için kişilerinize erişim izni gerekir."
+          "contactsPermission": "Rehberden müşteri seçmek veya müşteriyi rehbere eklemek için kişilerinize erişim izni gerekir."
         }
       ],
       [
