@@ -100,7 +100,7 @@ export default function AppointmentsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Calendar onDayPress={day => setSelectedDate(day.dateString)} markedDates={markedDates}
+      <Calendar firstDay={1} onDayPress={day => setSelectedDate(day.dateString)} markedDates={markedDates}
         theme={{ calendarBackground: colors.surface, textSectionTitleColor: colors.textSecondary, dayTextColor: colors.textPrimary, monthTextColor: colors.primary, arrowColor: colors.primary }} />
       <View style={styles.listHeader}>
         <Text style={styles.title}>{selectedDate} Randevuları</Text>
