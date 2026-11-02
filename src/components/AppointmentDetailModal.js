@@ -3,8 +3,10 @@ import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvo
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import KeyboardToolbar from './KeyboardToolbar';
+import uuid from 'react-native-uuid';
+import { appointmentSessionFields, completeCustomerAppointment } from '../utils/appointmentCustomerState';
 import { getAppointmentState, mutateAppointmentState } from '../utils/appointmentStorage';
-import { normalizePhone, validateRecord } from '../utils/appointmentRules';
+import { normalizePhone } from '../utils/appointmentRules';
 import { cancelAppointmentNotifications } from '../utils/notifications';
 
 export default function AppointmentDetailModal({ visible, appointment, onClose, onDelete }) {
@@ -19,8 +21,8 @@ export default function AppointmentDetailModal({ visible, appointment, onClose, 
     if (appointment && visible) {
       getAppointmentState().then(state => {
         if (!active) return;
-        const draft = state.records.find(record => record.id === appointment.musteriId);
-        if (draft) { setYas(draft.yas || ''); setKupaSayisi(draft.kupaSayisi || ''); setIslemler(draft.islemler || ''); }
+        const fields = appointmentSessionFields(state, appointment);
+        setYas(fields.yas); setKupaSayisi(fields.kupaSayisi); setIslemler(fields.islemler);
       }).catch(error => { if (active) Alert.alert('Seans okunamadı', error.message); });
     }
     return () => { active = false; };
@@ -42,24 +44,16 @@ export default function AppointmentDetailModal({ visible, appointment, onClose, 
     if (busy.current) return;
     busy.current = true; setSaving(true);
     try {
-      await mutateAppointmentState(state => {
-        const draft = state.records.find(record => record.id === appointment.musteriId);
-        if (!draft || !state.appointments.some(item => item.id === appointment.id)) throw new Error('Bağlı randevu veya seans kaydı bulunamadı.');
-        const record = validateRecord({ ...draft, yas, kupaSayisi, islemler, status: 'completed' });
-        return {
-          records: state.records.map(item => item.id === record.id ? record : item),
-          appointments: state.appointments.map(item => item.id === appointment.id ? { ...item, status: 'completed' } : item),
-        };
-      });
+      await mutateAppointmentState(state => completeCustomerAppointment(state, appointment.id, { yas, kupaSayisi, islemler }, uuid.v4()));
       let warning = '';
       try { await cancelAppointmentNotifications(appointment.id); }
       catch { warning = ' Eski hatırlatma iptal edilemedi.'; }
-      Alert.alert('Başarılı', 'Seans tamamlandı ve müşteri bilgileri güncellendi.' + warning);
+      Alert.alert('Başarılı', 'Seans tamamlandı ve seans kaydı saklandı.' + warning);
       onClose();
     } catch (error) { Alert.alert('Seans kaydedilemedi', error.message); }
     finally { busy.current = false; setSaving(false); }
   };
-  const handleCancelAppointment = () => Alert.alert('Randevuyu İptal Et', 'Randevu kaldırılır. Boş taslak silinir; tamamlanmış seans bilgileri korunur.', [
+  const handleCancelAppointment = () => Alert.alert('Randevuyu İptal Et', 'Randevu kaldırılır. Yalnızca bu randevuya ait kullanılmayan taslak kaldırılır; mevcut müşteriler ve tamamlanmış seanslar korunur.', [
     { text: 'Vazgeç', style: 'cancel' }, { text: 'Evet, İptal Et', style: 'destructive', onPress: () => onDelete(appointment) },
   ]);
   if (!appointment) return null;

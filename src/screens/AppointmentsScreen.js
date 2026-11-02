@@ -7,12 +7,13 @@ import uuid from 'react-native-uuid';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { getAppointmentState, mutateAppointmentState } from '../utils/appointmentStorage';
-import { localDateKey, appointmentDate, durationMinutes, normalizePhone, hasConflict, isCompletedRecord } from '../utils/appointmentRules';
+import { localDateKey, appointmentDate, durationMinutes, normalizePhone, hasConflict } from '../utils/appointmentRules';
 import { scheduleAppointmentNotifications, cancelAppointmentNotifications } from '../utils/notifications';
 import KeyboardToolbar from '../components/KeyboardToolbar';
 import AppointmentDetailModal from '../components/AppointmentDetailModal';
 import CustomerSourceButtons from '../components/CustomerSourceButtons';
 import { selectAppointments } from '../utils/appointmentList';
+import { addCustomerAppointment, removeCustomerAppointment } from '../utils/appointmentCustomerState';
 
 LocaleConfig.locales.tr = {
   monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
@@ -30,6 +31,7 @@ export default function AppointmentsScreen() {
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isim, setIsim] = useState('');
   const [telefon, setTelefon] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [sure, setSure] = useState('1 Saat');
   const [time, setTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -49,6 +51,28 @@ export default function AppointmentsScreen() {
     return () => clearInterval(timer);
   }, [loadAppointments]));
 
+  const selectCustomer = person => {
+    if (busy.current) return;
+    setIsim(person.isim); setTelefon(person.telefon);
+    setSelectedCustomer(person.recordId || null);
+  };
+  const changeName = value => { if (!busy.current) { setIsim(value); setSelectedCustomer(null); } };
+  const changePhone = value => { if (!busy.current) { setTelefon(value); setSelectedCustomer(null); } };
+  const resetCustomerForm = () => {
+    setIsim(''); setTelefon(''); setSelectedCustomer(null); setSure('1 Saat'); setShowTimePicker(false);
+  };
+  const closeAddModal = () => {
+    if (busy.current) return;
+    setIsAddModalVisible(false); resetCustomerForm();
+  };
+  const askForDraft = () => new Promise(resolve => {
+    Alert.alert('Müşteri taslağı eklensin mi?', 'Bu yeni müşteri için Kayıtlar listesine bir taslak da eklensin mi? Hayır seçerseniz yalnızca randevu kaydedilir.', [
+      { text: 'Vazgeç', style: 'cancel', onPress: () => resolve(null) },
+      { text: 'Hayır', onPress: () => resolve(false) },
+      { text: 'Evet, Taslak Ekle', onPress: () => resolve(true) },
+    ], { cancelable: true, onDismiss: () => resolve(null) });
+  });
+
   const handleSaveAppointment = async () => {
     if (busy.current) return;
     busy.current = true; setSaving(true);
@@ -59,16 +83,17 @@ export default function AppointmentsScreen() {
       const minutes = durationMinutes(sure);
       const date = appointmentDate(selectedDate, time);
       if (date.getTime() <= Date.now()) throw new Error('Geçmiş zamana randevu oluşturulamaz.');
-      const musteriId = uuid.v4();
-      const appointment = { id: uuid.v4(), musteriId, isim: name, telefon: phone, tarih: date.toISOString(), sure: sure.trim(), durationMinutes: minutes, dateKey: selectedDate, status: 'scheduled' };
-      const draft = { id: musteriId, isim: name, telefon: phone, yas: '', kupaSayisi: '', islemler: '', tarih: date.toISOString(), status: 'draft' };
+      const addDraft = selectedCustomer ? false : await askForDraft();
+      if (addDraft === null) return;
+      const appointment = { id: uuid.v4(), isim: name, telefon: phone, tarih: date.toISOString(), sure: sure.trim(), durationMinutes: minutes, dateKey: selectedDate, status: 'scheduled' };
+      const draftId = addDraft ? uuid.v4() : null;
       const next = await mutateAppointmentState(state => {
+        if (date.getTime() <= Date.now()) throw new Error('Geçmiş zamana randevu oluşturulamaz.');
         if (hasConflict(state.appointments, date, minutes)) throw new Error('Bu saat aralığında başka bir randevu var.');
-        return { records: [draft, ...state.records], appointments: [...state.appointments, appointment] };
+        return addCustomerAppointment(state, appointment, { savedRecordId: selectedCustomer, addDraft, draftId });
       });
       setAppointments(next.appointments);
-      setIsAddModalVisible(false); setShowTimePicker(false);
-      setIsim(''); setTelefon(''); setSure('1 Saat');
+      setIsAddModalVisible(false); resetCustomerForm();
       // The appointment is already persisted. Notification failure must not
       // make the user retry and accidentally create a duplicate appointment.
       let warning = '';
@@ -78,7 +103,7 @@ export default function AppointmentsScreen() {
       } catch {
         warning = ' Yerel hatırlatma kurulamadı; randevu kaydedildi.';
       }
-      Alert.alert('Randevu kaydedildi', 'Müşteri kayıt taslağı oluşturuldu.' + warning);
+      Alert.alert('Randevu kaydedildi', (addDraft ? 'Müşteri kayıt taslağı da oluşturuldu.' : 'Müşteri listesine yeni taslak eklenmedi.') + warning);
     } catch (error) {
       Alert.alert('Randevu kaydedilemedi', error.message + ' Kayıtları kontrol ederek tekrar deneyin.');
     } finally { busy.current = false; setSaving(false); }
@@ -88,10 +113,7 @@ export default function AppointmentsScreen() {
     if (busy.current) return;
     busy.current = true;
     try {
-      const next = await mutateAppointmentState(state => ({
-        appointments: state.appointments.filter(item => item.id !== appointment.id),
-        records: state.records.filter(record => record.id !== appointment.musteriId || isCompletedRecord(record)),
-      }));
+      const next = await mutateAppointmentState(state => removeCustomerAppointment(state, appointment.id));
       setAppointments(next.appointments); setIsDetailModalVisible(false);
       try { await cancelAppointmentNotifications(appointment.id); }
       catch { Alert.alert('Randevu silindi', 'Hatırlatma iptal edilemedi. Cihazda eski bir bildirim görünebilir.'); }
@@ -105,7 +127,7 @@ export default function AppointmentsScreen() {
   const changeList = mode => { setNow(Date.now()); setListMode(mode); };
   const openNewAppointment = () => {
     if (listMode !== 'day') { setSelectedDate(localDateKey()); setListMode('day'); }
-    setTime(new Date()); setIsAddModalVisible(true);
+    resetCustomerForm(); setTime(new Date()); setIsAddModalVisible(true);
   };
   const markedDates = {};
   for (const item of appointments) {
@@ -139,20 +161,20 @@ export default function AppointmentsScreen() {
           </TouchableOpacity>
         )} ListEmptyComponent={<Text style={styles.emptyText}>{emptyMessage}</Text>} />
       <AppointmentDetailModal visible={isDetailModalVisible} appointment={selectedAppointment} onClose={() => { setIsDetailModalVisible(false); loadAppointments(); }} onDelete={handleDeleteAppointment} />
-      <Modal visible={isAddModalVisible} animationType="slide" transparent onRequestClose={() => { if (!saving) { setIsAddModalVisible(false); setShowTimePicker(false); } }}>
+      <Modal visible={isAddModalVisible} animationType="slide" transparent onRequestClose={closeAddModal}>
         <SafeAreaView style={styles.modalSafe} edges={['top', 'bottom', 'left', 'right']}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
         <View style={styles.modalContent}><ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
           <Text style={styles.modalTitle}>Yeni Randevu</Text>
-          {isAddModalVisible && <CustomerSourceButtons includeSaved disabled={saving} onSelect={person => { setIsim(person.isim); setTelefon(person.telefon); }} />}
-          <TextInput style={styles.input} placeholder="Müşteri İsmi" placeholderTextColor={colors.textSecondary} value={isim} onChangeText={setIsim} />
-          <TextInput style={styles.input} placeholder="Telefon" keyboardType="phone-pad" placeholderTextColor={colors.textSecondary} value={telefon} onChangeText={setTelefon} />
-          <TextInput style={styles.input} placeholder="Süre (Örn: 1 Saat)" placeholderTextColor={colors.textSecondary} value={sure} onChangeText={setSure} />
-          <TouchableOpacity style={styles.timeBtn} onPress={() => setShowTimePicker(true)}><Text style={styles.timeBtnText}>Saat Seç: {time.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</Text></TouchableOpacity>
-          {showTimePicker && <DateTimePicker value={time} mode="time" is24Hour display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          {isAddModalVisible && <CustomerSourceButtons includeSaved disabled={saving} onSelect={selectCustomer} />}
+          <TextInput style={styles.input} placeholder="Müşteri İsmi" placeholderTextColor={colors.textSecondary} value={isim} editable={!saving} onChangeText={changeName} />
+          <TextInput style={styles.input} placeholder="Telefon" keyboardType="phone-pad" placeholderTextColor={colors.textSecondary} value={telefon} editable={!saving} onChangeText={changePhone} />
+          <TextInput style={styles.input} placeholder="Süre (Örn: 1 Saat)" placeholderTextColor={colors.textSecondary} value={sure} editable={!saving} onChangeText={setSure} />
+          <TouchableOpacity disabled={saving} style={styles.timeBtn} onPress={() => setShowTimePicker(true)}><Text style={styles.timeBtnText}>Saat Seç: {time.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</Text></TouchableOpacity>
+          {showTimePicker && !saving && <DateTimePicker value={time} mode="time" is24Hour display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onValueChange={(_event, selectedTime) => { if (Platform.OS === 'android') setShowTimePicker(false); if (selectedTime instanceof Date) setTime(selectedTime); }} onDismiss={() => setShowTimePicker(false)} />}
           <View style={styles.btnRow}>
-            <TouchableOpacity disabled={saving} style={[styles.btn, styles.cancelBtn]} onPress={() => { setIsAddModalVisible(false); setShowTimePicker(false); }}><Text style={styles.btnText}>İptal</Text></TouchableOpacity>
+            <TouchableOpacity disabled={saving} style={[styles.btn, styles.cancelBtn]} onPress={closeAddModal}><Text style={styles.btnText}>İptal</Text></TouchableOpacity>
             <TouchableOpacity disabled={saving} style={[styles.btn, styles.saveBtn]} onPress={handleSaveAppointment}><Text style={styles.btnText}>{saving ? 'Kaydediliyor…' : 'Kaydet'}</Text></TouchableOpacity>
           </View>
         </ScrollView><KeyboardToolbar /></View>
