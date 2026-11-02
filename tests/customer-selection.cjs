@@ -59,12 +59,13 @@ test('Turkish name and formatted phone searches work; invalid records ignored', 
   assert.equal(c.filterCustomers(customers, 'ışık').length, 1); assert.equal(c.filterCustomers(customers, 'ipek').length, 1);
   assert.equal(c.filterCustomers(customers, '555 123 45 67').length, 1); assert.equal(c.filterCustomers([], '').length, 0);
 });
-test('both forms include shared source picker; appointment keeps a fresh session draft', () => {
+test('both forms include shared source picker; appointment draft creation requires consent', () => {
   const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
   const appointment = read('src/screens/AppointmentsScreen.js'); const record = read('src/screens/AddRecordScreen.js');
   assert.match(appointment, /CustomerSourceButtons includeSaved/); assert.match(record, /CustomerSourceButtons disabled/);
   for (const source of [appointment, record]) assert.match(source, /setIsim\(person.isim\); setTelefon\(person.telefon\)/);
-  assert.match(appointment, /const musteriId = uuid.v4\(\)/);
+  assert.match(appointment, /selectedCustomer \? false : await askForDraft\(\)/);
+  assert.match(appointment, /addCustomerAppointment\(state, appointment/);
   assert.match(read('App.js'), /useSafeAreaInsets\(\)/);
   assert.match(read('App.js'), /getTabBarLayout\(insets\)/);
 });
