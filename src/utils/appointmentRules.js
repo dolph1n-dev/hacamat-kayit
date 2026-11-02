@@ -54,7 +54,7 @@ export function validateRecord(record, allowDraft = false) {
   const cups = String(record.kupaSayisi || '').trim();
   const age = String(record.yas || '').trim();
   if (!name) throw new Error('Müşteri ismi zorunludur.');
-  if ((!allowDraft || cups) && (!/^\d+$/.test(cups) || Number(cups) < 1)) throw new Error('Kupa sayısı pozitif bir tam sayı olmalıdır.');
+  if ((!allowDraft || record.status === 'completed' || cups) && (!/^\d+$/.test(cups) || Number(cups) < 1)) throw new Error('Kupa sayısı pozitif bir tam sayı olmalıdır.');
   if (age && (!/^\d+$/.test(age) || Number(age) > 130)) throw new Error('Yaş 0–130 arasında olmalıdır.');
   if (!Number.isFinite(new Date(record.tarih).getTime())) throw new Error('Geçersiz kayıt tarihi.');
   return { ...record, isim: name, telefon: String(record.telefon || '').trim() ? normalizePhone(record.telefon) : '', yas: age, kupaSayisi: cups, islemler: String(record.islemler || '').trim() };

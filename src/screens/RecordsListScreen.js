@@ -6,7 +6,7 @@ import RecordCard from '../components/RecordCard';
 import RecordDetailModal from '../components/RecordDetailModal';
 import { colors } from '../theme/colors';
 import { getAppointmentState, mutateAppointmentState } from '../utils/appointmentStorage';
-import { validateRecord, normalizePhone } from '../utils/appointmentRules';
+import { validateRecord, normalizePhone, isCompletedRecord } from '../utils/appointmentRules';
 import { Ionicons } from '@expo/vector-icons';
 import KeyboardToolbar from '../components/KeyboardToolbar';
 
@@ -23,21 +23,29 @@ export default function RecordsListScreen() {
   useFocusEffect(useCallback(() => { loadRecords(); }, [loadRecords]));
 
   const handleUpdate = async updatedRecord => {
-    if (busy.current) return;
+    if (busy.current) return false;
     busy.current = true;
     try {
-      const valid = validateRecord(updatedRecord, updatedRecord.status === 'draft' || !String(updatedRecord.kupaSayisi || '').trim());
       const next = await mutateAppointmentState(state => {
-        if (!state.records.some(record => record.id === valid.id)) throw new Error('Kayıt artık mevcut değil.');
+        const original = state.records.find(record => record.id === updatedRecord.id);
+        if (!original) throw new Error('Kayıt artık mevcut değil.');
+        // Decide from persisted state, never from a cleared input or edited status.
+        // Keep legacy empty drafts editable without weakening completed sessions.
+        const allowDraft = original.status === 'draft' || (!original.status && !isCompletedRecord(original));
+        const valid = validateRecord({ ...updatedRecord, status: original.status }, allowDraft);
         const linked = state.appointments.some(item => item.musteriId === valid.id);
-        const original = state.records.find(record => record.id === valid.id);
         if (linked && (valid.isim !== original.isim || valid.telefon !== (original.telefon ? normalizePhone(original.telefon) : '') || valid.tarih !== original.tarih)) {
           throw new Error('Randevuya bağlı kaydın isim, telefon ve tarihini bu ekranda değiştiremezsiniz. Randevuyu yeniden oluşturun.');
         }
         return { ...state, records: state.records.map(record => record.id === valid.id ? valid : record) };
       });
-      setRecords(next.records); setModalVisible(false);
-    } catch (error) { Alert.alert('Kayıt güncellenemedi', error.message); }
+      setRecords(next.records); setSelectedRecord(next.records.find(record => record.id === updatedRecord.id));
+      setModalVisible(false);
+      return true;
+    } catch (error) {
+      Alert.alert('Kayıt güncellenemedi', error.message);
+      return false;
+    }
     finally { busy.current = false; }
   };
 
