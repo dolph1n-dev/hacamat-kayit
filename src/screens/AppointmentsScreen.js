@@ -12,6 +12,7 @@ import { scheduleAppointmentNotifications, cancelAppointmentNotifications } from
 import KeyboardToolbar from '../components/KeyboardToolbar';
 import AppointmentDetailModal from '../components/AppointmentDetailModal';
 import CustomerSourceButtons from '../components/CustomerSourceButtons';
+import { selectAppointments } from '../utils/appointmentList';
 
 LocaleConfig.locales.tr = {
   monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
@@ -24,6 +25,8 @@ LocaleConfig.defaultLocale = 'tr';
 export default function AppointmentsScreen() {
   const [appointments, setAppointments] = useState([]);
   const [selectedDate, setSelectedDate] = useState(() => localDateKey());
+  const [listMode, setListMode] = useState('day');
+  const [now, setNow] = useState(Date.now);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isim, setIsim] = useState('');
   const [telefon, setTelefon] = useState('');
@@ -39,7 +42,12 @@ export default function AppointmentsScreen() {
     try { setAppointments((await getAppointmentState()).appointments); }
     catch (error) { Alert.alert('Veri okunamadı', error.message); }
   }, []);
-  useFocusEffect(useCallback(() => { loadAppointments(); }, [loadAppointments]));
+  useFocusEffect(useCallback(() => {
+    loadAppointments();
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, [loadAppointments]));
 
   const handleSaveAppointment = async () => {
     if (busy.current) return;
@@ -91,7 +99,14 @@ export default function AppointmentsScreen() {
     finally { busy.current = false; }
   };
 
-  const dayAppointments = appointments.filter(item => item.dateKey === selectedDate).sort((a, b) => new Date(a.tarih) - new Date(b.tarih));
+  const visibleAppointments = selectAppointments(appointments, { mode: listMode, selectedDate, now });
+  const listTitle = listMode === 'past' ? 'Geçmiş Randevular' : listMode === 'all' ? 'Tüm Randevular' : selectedDate + ' Randevuları';
+  const emptyMessage = listMode === 'past' ? 'Saati geçmiş randevu bulunmuyor.' : listMode === 'all' ? 'Henüz randevu bulunmuyor.' : 'Bu tarihe ait randevu bulunmuyor.';
+  const changeList = mode => { setNow(Date.now()); setListMode(mode); };
+  const openNewAppointment = () => {
+    if (listMode !== 'day') { setSelectedDate(localDateKey()); setListMode('day'); }
+    setTime(new Date()); setIsAddModalVisible(true);
+  };
   const markedDates = {};
   for (const item of appointments) {
     if (item.dateKey) markedDates[item.dateKey] = { marked: true, dotColor: colors.primary };
@@ -100,20 +115,29 @@ export default function AppointmentsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Calendar firstDay={1} onDayPress={day => setSelectedDate(day.dateString)} markedDates={markedDates}
-        theme={{ calendarBackground: colors.surface, textSectionTitleColor: colors.textSecondary, dayTextColor: colors.textPrimary, monthTextColor: colors.primary, arrowColor: colors.primary }} />
-      <View style={styles.listHeader}>
-        <Text style={styles.title}>{selectedDate} Randevuları</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => { setTime(new Date()); setIsAddModalVisible(true); }}><Text style={styles.addBtnText}>+ Yeni</Text></TouchableOpacity>
+      <View style={styles.listModes}>
+        {[{ mode: 'day', label: 'Günlük Takvim' }, { mode: 'past', label: 'Geçmiş Randevular' }, { mode: 'all', label: 'Tüm Randevular' }].map(option => (
+          <TouchableOpacity key={option.mode} accessibilityRole="button" accessibilityState={{ selected: listMode === option.mode }} style={[styles.modeButton, listMode === option.mode && styles.modeButtonSelected]} onPress={() => changeList(option.mode)}>
+            <Text style={[styles.modeLabel, listMode === option.mode && styles.modeLabelSelected]}>{option.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
-      <FlatList data={dayAppointments} keyExtractor={item => item.id} contentContainerStyle={{ padding: 20 }}
+      {listMode === 'day' && <Calendar firstDay={1} onDayPress={day => setSelectedDate(day.dateString)} markedDates={markedDates}
+        theme={{ calendarBackground: colors.surface, textSectionTitleColor: colors.textSecondary, dayTextColor: colors.textPrimary, monthTextColor: colors.primary, arrowColor: colors.primary }} />}
+      <View style={styles.listHeader}>
+        <Text accessibilityRole="header" style={styles.title}>{listTitle} ({visibleAppointments.length})</Text>
+        <TouchableOpacity style={styles.addBtn} onPress={openNewAppointment}><Text style={styles.addBtnText}>+ Yeni</Text></TouchableOpacity>
+      </View>
+      <FlatList key={listMode} data={visibleAppointments} keyExtractor={item => item.id} contentContainerStyle={{ padding: 20 }}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={() => { setSelectedAppointment(item); setIsDetailModalVisible(true); }}>
-            <View><Text style={styles.cardTime}>{new Date(item.tarih).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</Text>
+            <View style={styles.cardInfo}>
+              {listMode !== 'day' && <Text style={styles.cardDate}>{item.tarih && Number.isFinite(new Date(item.tarih).getTime()) ? new Date(item.tarih).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Tarih bilgisi yok'}</Text>}
+              <Text style={styles.cardTime}>{item.tarih && Number.isFinite(new Date(item.tarih).getTime()) ? new Date(item.tarih).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '—'}</Text>
               <Text style={styles.cardName}>{item.isim}</Text><Text style={styles.cardPhone}>{item.telefon}</Text></View>
             <Text style={styles.cardDuration}>{item.sure}</Text>
           </TouchableOpacity>
-        )} ListEmptyComponent={<Text style={styles.emptyText}>Bu tarihe ait randevu bulunmuyor.</Text>} />
+        )} ListEmptyComponent={<Text style={styles.emptyText}>{emptyMessage}</Text>} />
       <AppointmentDetailModal visible={isDetailModalVisible} appointment={selectedAppointment} onClose={() => { setIsDetailModalVisible(false); loadAppointments(); }} onDelete={handleDeleteAppointment} />
       <Modal visible={isAddModalVisible} animationType="slide" transparent onRequestClose={() => { if (!saving) { setIsAddModalVisible(false); setShowTimePicker(false); } }}>
         <SafeAreaView style={styles.modalSafe} edges={['top', 'bottom', 'left', 'right']}>
@@ -140,9 +164,16 @@ export default function AppointmentsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  listModes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  modeButton: { flexGrow: 1, minWidth: 140, minHeight: 48, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  modeButtonSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  modeLabel: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, textAlign: 'center' },
+  modeLabelSelected: { color: colors.background },
+  cardInfo: { flex: 1, marginRight: 12 },
+  cardDate: { color: colors.textSecondary, fontSize: 14, marginBottom: 6 },
   listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
-  title: { fontSize: 20, fontWeight: 'bold', color: colors.textPrimary },
-  addBtn: { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  title: { flex: 1, marginRight: 12, fontSize: 20, fontWeight: 'bold', color: colors.textPrimary },
+  addBtn: { minHeight: 44, justifyContent: 'center', backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
   addBtnText: { color: '#FFF', fontWeight: 'bold' },
   card: { backgroundColor: colors.surface, padding: 16, borderRadius: 12, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   cardTime: { color: colors.primary, fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
