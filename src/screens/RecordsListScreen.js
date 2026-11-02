@@ -33,7 +33,7 @@ export default function RecordsListScreen() {
         // Keep legacy empty drafts editable without weakening completed sessions.
         const allowDraft = original.status === 'draft' || (!original.status && !isCompletedRecord(original));
         const valid = validateRecord({ ...updatedRecord, status: original.status }, allowDraft);
-        const linked = state.appointments.some(item => item.musteriId === valid.id);
+        const linked = state.appointments.some(item => (item.musteriId === valid.id || item.customerRecordId === valid.id));
         if (linked && (valid.isim !== original.isim || valid.telefon !== (original.telefon ? normalizePhone(original.telefon) : '') || valid.tarih !== original.tarih)) {
           throw new Error('Randevuya bağlı kaydın isim, telefon ve tarihini bu ekranda değiştiremezsiniz. Randevuyu yeniden oluşturun.');
         }
@@ -54,7 +54,7 @@ export default function RecordsListScreen() {
     busy.current = true;
     try {
       const next = await mutateAppointmentState(state => {
-        if (state.appointments.some(item => item.musteriId === id)) throw new Error('Önce Randevular ekranından bağlı randevuyu kaldırın. Tamamlanmış seans bilgileri korunur.');
+        if (state.appointments.some(item => (item.musteriId === id || item.customerRecordId === id))) throw new Error('Önce Randevular ekranından bağlı randevuyu kaldırın. Tamamlanmış seans bilgileri korunur.');
         return { ...state, records: state.records.filter(record => record.id !== id) };
       });
       setRecords(next.records); setModalVisible(false);
@@ -85,10 +85,11 @@ export default function RecordsListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { padding: 20, paddingBottom: 10 },
-  title: { fontSize: 28, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 16 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.border },
-  searchIcon: { marginRight: 8 }, searchInput: { flex: 1, paddingVertical: 12, color: colors.textPrimary, fontSize: 16 },
-  listContainer: { padding: 20, paddingBottom: 100 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  title: { fontSize: 28, fontWeight: 'bold', color: colors.textPrimary },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, paddingHorizontal: 12, borderRadius: 8, marginHorizontal: 20, marginBottom: 20, height: 50, borderWidth: 1, borderColor: colors.border },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, color: colors.textPrimary, fontSize: 16 },
+  listContainer: { paddingHorizontal: 20, paddingBottom: 100 },
   emptyText: { color: colors.textSecondary, textAlign: 'center', marginTop: 40, fontSize: 16 },
 });

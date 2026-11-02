@@ -16,7 +16,7 @@ export function contactSelection(contact) {
 }
 
 // Records are sessions, not unique customers. Show each normalized phone once,
-// using its latest session name; never reuse a historical session as a draft.
+// using its latest session name and record reference, never as a new draft.
 export function savedCustomerChoices(records) {
   const unique = new Map();
   const sorted = [...records].filter(record => record && record.id).sort((a, b) => (Date.parse(b.tarih) || 0) - (Date.parse(a.tarih) || 0));
@@ -26,7 +26,7 @@ export function savedCustomerChoices(records) {
     let telefon = String(record.telefon || '').trim();
     try { if (telefon) telefon = normalizePhone(telefon); } catch {}
     const key = telefon ? 'phone:' + telefon : 'record:' + record.id;
-    if (!unique.has(key)) unique.set(key, { id: key, isim, telefon });
+    if (!unique.has(key)) unique.set(key, { id: key, recordId: record.id, isim, telefon });
   }
   return [...unique.values()].sort((a, b) => a.isim.localeCompare(b.isim, 'tr'));
 }

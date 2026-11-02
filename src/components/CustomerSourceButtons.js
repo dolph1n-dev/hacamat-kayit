@@ -18,7 +18,7 @@ export default function CustomerSourceButtons({ onSelect, includeSaved = false, 
 
   const choose = person => {
     if (!active.current || disabled) return;
-    onSelect({ isim: person.isim, telefon: person.telefon || '' });
+    onSelect({ isim: person.isim, telefon: person.telefon || '', recordId: person.recordId || null });
     setPanel(null); setContact(null); setQuery('');
     if (!person.telefon) Alert.alert('Telefon bulunamadı', 'İsim aktarıldı. Telefon numarasını elle girebilirsiniz.');
   };
