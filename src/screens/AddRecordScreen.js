@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import uuid from 'react-native-uuid';
 import * as Contacts from 'expo-contacts/legacy';
@@ -11,7 +11,7 @@ import KeyboardToolbar from '../components/KeyboardToolbar';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import CustomerSourceButtons from '../components/CustomerSourceButtons';
 
-export default function AddRecordScreen() {
+export default function AddRecordScreen({ navigation }) {
   const [isim, setIsim] = useState('');
   const [telefon, setTelefon] = useState('');
   const [yas, setYas] = useState('');
@@ -22,6 +22,18 @@ export default function AddRecordScreen() {
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
 
+  const resetForm = () => {
+    setIsim(''); setTelefon(''); setYas(''); setKupaSayisi(''); setIslemler('');
+    setTarih(new Date()); setShowDatePicker(false);
+  };
+
+  const cancelAdding = () => {
+    if (busy.current) return;
+    resetForm();
+    Keyboard.dismiss();
+    navigation.navigate('Liste');
+  };
+
   const kaydet = async () => {
     if (busy.current) return;
     busy.current = true; setSaving(true);
@@ -29,7 +41,7 @@ export default function AddRecordScreen() {
       const record = validateRecord({ id: uuid.v4(), isim, telefon, yas, kupaSayisi, islemler, tarih: tarih.toISOString(), status: 'completed' });
       await mutateAppointmentState(state => ({ ...state, records: [record, ...state.records] }));
       Alert.alert('Başarılı', 'Kayıt başarıyla uygulamaya eklendi.');
-      setIsim(''); setTelefon(''); setYas(''); setKupaSayisi(''); setIslemler(''); setTarih(new Date());
+      resetForm();
     } catch (error) { Alert.alert('Kayıt eklenemedi', error.message); }
     finally { busy.current = false; setSaving(false); }
   };
@@ -56,7 +68,12 @@ export default function AddRecordScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>Yeni Müşteri</Text>
+          <View style={styles.header}>
+            <Text style={styles.title}>Yeni Müşteri</Text>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Yeni müşteri kaydını iptal et" disabled={saving} accessibilityState={{ disabled: saving }} style={[styles.cancelButton, saving && styles.disabledButton]} onPress={cancelAdding}>
+              <Text style={styles.cancelText}>İptal</Text>
+            </TouchableOpacity>
+          </View>
           <CustomerSourceButtons disabled={saving} onSelect={person => { setIsim(person.isim); setTelefon(person.telefon); }} />
           <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
             <Ionicons name="calendar-outline" size={20} color={colors.primary} />
@@ -86,7 +103,11 @@ export default function AddRecordScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: 20, paddingBottom: 100 },
-  title: { fontSize: 28, fontWeight: 'bold', color: colors.textPrimary, marginBottom: 24 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
+  title: { flex: 1, marginRight: 12, fontSize: 28, fontWeight: 'bold', color: colors.textPrimary },
+  cancelButton: { minWidth: 72, minHeight: 48, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  cancelText: { color: colors.textPrimary, fontSize: 16, fontWeight: '600' },
+  disabledButton: { opacity: 0.5 },
   input: { backgroundColor: colors.surface, color: colors.textPrimary, padding: 16, borderRadius: 12, marginBottom: 16, fontSize: 16, borderWidth: 1, borderColor: colors.border },
   phoneContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   phoneInput: { flex: 1, marginBottom: 0, marginRight: 10 },
